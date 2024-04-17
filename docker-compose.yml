@@ -1,0 +1,40 @@
+services:
+  mysql: # Container/Server/ComputerName on the Docker network
+    build: 
+      context: ./mysql
+      dockerfile: Dockerfile
+    image: dev-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: supersecretpassw0rd
+    ports:
+      - "3307:3307"
+
+  fastapi: # Container/Server/ComputerName on the Docker network
+    build: 
+      context: ./fastapi
+      dockerfile: Dockerfile
+    image: dev-fastapi
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mysql
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"] 
+
+  nextjs: # Container/Server/ComputerName on the Docker network
+    build: 
+      context: ./nextjs
+      dockerfile: Dockerfile
+    image: dev-nextjs
+    volumes:
+      - ./nextjs:/app
+      # These allow us to do hot rebuilding of the Next.js app
+      - /app/node_modules
+      - /app/.next
+    ports:
+      - "3000:3000"
+    depends_on:
+      - fastapi
+
+
+
+

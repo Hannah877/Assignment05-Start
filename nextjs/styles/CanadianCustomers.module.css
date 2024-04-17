@@ -1,0 +1,16 @@
+.tableContainer {
+    width: 100%;
+    overflow-x: auto;
+    border: 1px solid #000;
+}
+
+.tableContainer table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.tableContainer th, .tableContainer td {
+    border: 1px solid #000;
+    padding: 8px;
+    text-align: left;
+}
