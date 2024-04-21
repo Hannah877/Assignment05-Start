@@ -31,7 +31,7 @@ export default function Home() {
         </div>
       
         <section className="mb-2 p-5 bg-gray-800">
-          <h2 className="text-xl font-bold mb-4 text-white">Trending</h2>
+          <h2 className="text-xl mb-4 text-white">Trending</h2>
           <div className="w-4"></div>
           <div className="flex space-x-4 overflow-auto">
             {movies.map((movie, index) => (

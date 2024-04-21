@@ -1,15 +1,44 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel
+from typing import List
+from datetime import datetime, timedelta
+from fastapi.middleware.cors import CORSMiddleware
 
 DATABASE_URL = "mysql+mysqlconnector://root:supersecretpassw0rd@mysql/sakila"
 
 
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
 @app.get("/")
 async def root():
     return {"message": "Howdy"}
+
+
+@app.post("/rental")
+async def rental(request: Request):
+    data = await request.json()
+    customer_name = data['customer']
+    videos = data['videos']
+
+    rental_date = datetime.now()
+    due_date = rental_date + timedelta(days=data['rental_period'])
+
+    confirmation_message = f"New customer {customer_name} has successfully rented {len(videos)} video(s).\n"
+    confirmation_message += f"Due date: {due_date.strftime('%Y-%m-%d')} \nStaff ID: {data['staff_id']}"
+
+    return JSONResponse(content={"message": confirmation_message})
 
 
 @app.get("/getCanadianCustomers")
@@ -28,9 +57,8 @@ def getCanadianCustomers():
             WHERE country.country = 'Canada'
             ORDER BY city.city
         """))
-        customers = [{"first_name": row[0], "last_name": row[1], "email": row[2], "city": row[3]} for row in result]
+        customers = [{"first_name": row[0], "last_name": row[1],
+                      "email": row[2], "city": row[3]} for row in result]
         return customers
     finally:
         session.close()
-        
-        
