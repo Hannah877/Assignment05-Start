@@ -36,7 +36,7 @@ async def rental(request: Request):
     email = f"{customer_first_name}.{customer_last_name}@sakilacustomer.org"
     store_id = 1
     address_id = 1
-
+    print(film_names)
     rental_date = datetime.now()
     due_date = rental_date + timedelta(days=data['rental_period'])
 
@@ -60,18 +60,19 @@ async def rental(request: Request):
                 "address_id": address_id,
             })
 
-        # Check if all selected films have available inventory
-        query = text("""
-            SELECT f.film_id, COUNT(*) AS available_inventory
-            FROM film f
-            JOIN inventory i ON f.film_id = i.film_id
-            LEFT JOIN rental r ON i.inventory_id = r.inventory_id AND r.return_date IS NULL
-            WHERE f.title IN :film_names
-            GROUP BY f.film_id
-        """)
+        for name in film_names:
+            # Check if all selected films have available inventory
+            query = text("""
+                    SELECT f.film_id, COUNT(*) AS available_inventory
+                    FROM film f
+                    JOIN inventory i ON f.film_id = i.film_id
+                    LEFT JOIN rental r ON i.inventory_id = r.inventory_id AND r.return_date IS NULL
+                    WHERE f.title = :film_names
+                    GROUP BY f.film_id
+            """)
 
-        result = session.execute(query, {"film_names": film_names})
-        film_inventory = {row[0]: row[1] for row in result}
+            result = session.execute(query, {"film_names": name})
+            film_inventory = {row[0]: row[1] for row in result}
 
         for film_id in film_inventory:
             if film_inventory[film_id] == 0:
