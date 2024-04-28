@@ -98,7 +98,7 @@ export default function Rental() {
               <div className="flex flex-wrap mb-6">
                 <div className="w-full px-3">
                   <label className="block uppercase tracking-wide text-gray-400 text-xs font-bold mb-2">
-                    Video Title 
+                    Video Title (Seperated by Commas)
                   </label>
                   <input
                     type="text"

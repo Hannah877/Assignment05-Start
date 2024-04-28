@@ -73,16 +73,18 @@ def getAmericanCustomers():
     session = SessionLocal()
     try:
         result = session.execute(text("""
-            SELECT customer.first_name, customer.last_name, customer.email, city.city
+            SELECT city.city, COUNT(*) as customer_count
             FROM customer
             JOIN address ON customer.address_id = address.address_id
             JOIN city ON address.city_id = city.city_id
             JOIN country ON city.country_id = country.country_id
             WHERE country.country = 'United States'
-            ORDER BY city.city
+            GROUP BY city.city
+            ORDER BY COUNT(*) DESC
         """))
-        customers = [{"first_name": row[0], "last_name": row[1],
-                      "email": row[2], "city": row[3]} for row in result]
+        customers = [{"city": row.city, "customer_count": row.customer_count}
+                     for row in result]
+        print(customers)
         return customers
     finally:
         session.close()
