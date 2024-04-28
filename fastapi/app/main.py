@@ -113,8 +113,8 @@ async def rental(request: Request):
                                                 i.film_id = :film_id
                                                 AND r.inventory_id IS NULL
                                             LIMIT 1
-        """)
-        session.execute(query_insert_rental, {"film_id": film_id, "customer_id": customer_id,"due_date":due_date})
+                """)
+                session.execute(query_insert_rental, {"film_id": film_id, "customer_id": customer_id,"due_date":due_date})
 
 
         session.commit()
