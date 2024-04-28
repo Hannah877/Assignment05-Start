@@ -1,6 +1,4 @@
-import Layout from "../components/layout";
 import React from 'react';
-import { useTable, useSortBy } from 'react-table';
 import Sidebar from "../components/sidebar";
 import { useEffect, useRef } from 'react';
 import * as d3 from 'd3';

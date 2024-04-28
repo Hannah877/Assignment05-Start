@@ -7,7 +7,7 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: supersecretpassw0rd
     ports:
-      - "3307:3307"
+      - "3307:3306"
 
   fastapi: # Container/Server/ComputerName on the Docker network
     build: 

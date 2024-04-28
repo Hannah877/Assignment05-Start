@@ -29,17 +29,74 @@ async def root():
 @app.post("/rental")
 async def rental(request: Request):
     data = await request.json()
-    customer_first_name = data['firstName']
-    customer_last_name = data['lastName']
-    videos = data['videos']
+    customer_first_name = data['firstName'].upper()
+    customer_last_name = data["lastName"].upper()
+    film_names = data['videos']
+    customer_id = int(datetime.now().timestamp())
+    email = f"{customer_first_name}.{customer_last_name}@sakilacustomer.org"
+    store_id = 1
+    address_id = 1
 
     rental_date = datetime.now()
     due_date = rental_date + timedelta(days=data['rental_period'])
 
-    confirmation_message = f"New customer {customer_first_name} {customer_last_name} has successfully rented\n {videos}.\n"
-    confirmation_message += f"Due date: {due_date.strftime('%Y-%m-%d')} \nStaff ID: {data['staff_id']}"
+    engine = create_engine(DATABASE_URL)
+    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    session = SessionLocal()
 
-    return JSONResponse(content={"message": confirmation_message})
+    try:
+        # Add new customer
+        query = text("""
+                INSERT INTO customer (store_id, first_name, last_name, email, address_id, create_date)
+                VALUES (:store_id, :first_name, :last_name, :email, :address_id, NOW())
+            """)
+
+        session.execute(
+            query, {
+                "store_id": store_id,
+                "first_name": customer_first_name,
+                "last_name": customer_last_name,
+                "email": email,
+                "address_id": address_id,
+            })
+
+        # Check if all selected films have available inventory
+        query = text("""
+            SELECT f.film_id, COUNT(*) AS available_inventory
+            FROM film f
+            JOIN inventory i ON f.film_id = i.film_id
+            LEFT JOIN rental r ON i.inventory_id = r.inventory_id AND r.return_date IS NULL
+            WHERE f.title IN :film_names
+            GROUP BY f.film_id
+        """)
+
+        result = session.execute(query, {"film_names": film_names})
+        film_inventory = {row[0]: row[1] for row in result}
+
+        for film_id in film_inventory:
+            if film_inventory[film_id] == 0:
+                raise ValueError(
+                    f"Film '{film_names[film_id]}' is not available in stock")
+
+        # Perform the rental transaction
+        for film_id in film_inventory:
+            query = text("""
+                INSERT INTO rental (rental_date, inventory_id, customer_id, staff_id, return_date)
+                VALUES (NOW(),
+                        (SELECT inventory_id FROM inventory WHERE film_id = :film_id AND inventory_id NOT IN
+                            (SELECT inventory_id FROM rental WHERE return_date IS NULL)),
+                        :customer_id, 1, DATE_ADD(NOW(), INTERVAL 5 DAY))
+            """)
+            session.execute(query, {"film_id": film_id,
+                            "customer_id": customer_id})
+
+        session.commit()
+        confirmation_message = f"New customer {customer_first_name} {customer_last_name} has successfully added to the database\n and rented {film_names}.\n"
+        confirmation_message += f"Due date: {due_date.strftime('%Y-%m-%d')} \nStaff ID: {data['staff_id']}"
+
+        return JSONResponse(content={"message": confirmation_message})
+    finally:
+        session.close()
 
 
 @app.get("/getCanadianCustomers")
