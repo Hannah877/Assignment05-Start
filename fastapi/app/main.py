@@ -36,14 +36,16 @@ async def rental(request: Request):
     email = f"{customer_first_name}.{customer_last_name}@sakilacustomer.org"
     store_id = 1
     address_id = 1
-    print(film_names)
     rental_date = datetime.now()
     due_date = rental_date + timedelta(days=data['rental_period'])
-
+    films_not_available = []
+    films_available = []
+    film_inventory = 0
     engine = create_engine(DATABASE_URL)
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     session = SessionLocal()
 
+    print(film_names)
     try:
         # Add new customer
         query = text("""
@@ -71,13 +73,17 @@ async def rental(request: Request):
                     GROUP BY f.film_id
             """)
 
-            result = session.execute(query, {"film_names": name})
-            film_inventory = {row[0]: row[1] for row in result}
+            result = session.execute(query, {"film_names": name}).first()
 
-        for film_id in film_inventory:
-            if film_inventory[film_id] == 0:
-                raise ValueError(
-                    f"Film '{film_names[film_id]}' is not available in stock")
+            if result:
+                film_inventory = result[1]
+                print(film_inventory)
+                if film_inventory > 0:
+                    films_available.append(name)
+                else:
+                    films_not_available.append(name)
+            else:
+                films_not_available.append(name)
 
         # Perform the rental transaction
         for film_id in film_inventory:
@@ -92,7 +98,12 @@ async def rental(request: Request):
                             "customer_id": customer_id})
 
         session.commit()
-        confirmation_message = f"New customer {customer_first_name} {customer_last_name} has successfully added to the database\n and rented {film_names}.\n"
+
+        confirmation_message = f"New customer {customer_first_name} {customer_last_name} has been successfully added to the database.\n"
+        if films_available:
+            confirmation_message += f"The following film(s) have been rented: \n{', '.join(films_available)}.\n"
+        if films_not_available:
+            confirmation_message += f"The following film(s) are not in stock: \n{', '.join(films_not_available)}.\n"
         confirmation_message += f"Due date: {due_date.strftime('%Y-%m-%d')} \nStaff ID: {data['staff_id']}"
 
         return JSONResponse(content={"message": confirmation_message})
@@ -142,7 +153,6 @@ def getAmericanCustomers():
         """))
         customers = [{"city": row.city, "customer_count": row.customer_count}
                      for row in result]
-        print(customers)
         return customers
     finally:
         session.close()
