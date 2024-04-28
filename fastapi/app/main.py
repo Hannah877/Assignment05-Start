@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from typing import List
 from datetime import datetime, timedelta
 from fastapi.middleware.cors import CORSMiddleware
-
+import random
 DATABASE_URL = "mysql+mysqlconnector://root:supersecretpassw0rd@mysql/sakila"
 
 
@@ -32,7 +32,7 @@ async def rental(request: Request):
     customer_first_name = data['firstName'].upper()
     customer_last_name = data["lastName"].upper()
     film_names = data['videos']
-    customer_id = int(datetime.now().timestamp())
+    customer_id = random.randint(0,1000) 
     email = f"{customer_first_name}.{customer_last_name}@sakilacustomer.org"
     store_id = 1
     address_id = 1
@@ -85,20 +85,39 @@ async def rental(request: Request):
             else:
                 films_not_available.append(name)
 
-        # Perform the rental transaction
-        for film_id in film_inventory:
-            query = text("""
-                INSERT INTO rental (rental_date, inventory_id, customer_id, staff_id, return_date)
-                VALUES (NOW(),
-                        (SELECT inventory_id FROM inventory WHERE film_id = :film_id AND inventory_id NOT IN
-                            (SELECT inventory_id FROM rental WHERE return_date IS NULL)),
-                        :customer_id, 1, DATE_ADD(NOW(), INTERVAL 5 DAY))
+            query_film_id = text("""
+                                SELECT film_id
+                                FROM film
+                                WHERE title = :film_name
             """)
-            session.execute(query, {"film_id": film_id,
-                            "customer_id": customer_id})
+            result_film_id = session.execute(query_film_id, {"film_name": name})
+            film_id_row = result_film_id.fetchone()
+            print(film_id_row)
+            if film_id_row:
+                film_id = film_id_row[0]
+        
+                # Insert rental record for the film
+                query_insert_rental = text("""
+                                            INSERT INTO rental (rental_date, inventory_id, customer_id, staff_id, return_date)
+                                            SELECT
+                                                NOW(),
+                                                i.inventory_id,
+                                                :customer_id,
+                                                1,
+                                                :due_date
+                                            FROM
+                                                inventory i
+                                            LEFT JOIN
+                                                rental r ON i.inventory_id = r.inventory_id AND r.return_date IS NULL
+                                            WHERE
+                                                i.film_id = :film_id
+                                                AND r.inventory_id IS NULL
+                                            LIMIT 1
+        """)
+        session.execute(query_insert_rental, {"film_id": film_id, "customer_id": customer_id,"due_date":due_date})
+
 
         session.commit()
-
         confirmation_message = f"New customer {customer_first_name} {customer_last_name} has been successfully added to the database.\n"
         if films_available:
             confirmation_message += f"The following film(s) have been rented: \n{', '.join(films_available)}.\n"
@@ -109,6 +128,7 @@ async def rental(request: Request):
         return JSONResponse(content={"message": confirmation_message})
     finally:
         session.close()
+
 
 
 @app.get("/getCanadianCustomers")
@@ -153,6 +173,7 @@ def getAmericanCustomers():
         """))
         customers = [{"city": row.city, "customer_count": row.customer_count}
                      for row in result]
+        print(customers)
         return customers
     finally:
         session.close()
