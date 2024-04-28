@@ -4,7 +4,8 @@ import Link from 'next/link';
 import Sidebar from "../components/sidebar";
 
 export default function Rental() {
-  const [customer, setCustomer] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [videoTitles, setVideoTitles] = useState('');
   const [confirmation, setConfirmation] = useState('');
 
@@ -14,7 +15,8 @@ export default function Rental() {
     const videos = videoTitles.split(',').map(title => title.trim());
 
     const payload = {
-      customer,
+      firstName,
+      lastName,
       videos,
       staff_id: 1,
       rental_period: 5,
@@ -58,17 +60,34 @@ export default function Rental() {
             <h1 className="text-3xl font-bold mb-4 text-white text-center">Customer and Rental Management</h1>
             <form onSubmit={handleSubmit} className="bg-gray-700 p-10 rounded-lg">
 
-              {/* add customer */}
+              {/* add customer first name*/}
               <div className="flex flex-wrap mb-6">
                 <div className="w-full px-3">
                   <label className="block uppercase tracking-wide text-gray-400 text-xs font-bold mb-2">
-                    Customer Name
+                    Customer First Name
                   </label>
                   <input
                     type="text"
-                    value={customer}
-                    onChange={(e) => setCustomer(e.target.value)}
-                    placeholder="Enter customer name"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="Enter customer first name"
+                    className="appearance-none block w-full bg-gray-200 text-gray-700 border border-gray-200 rounded py-3 px-4 leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* add customer last name*/}
+              <div className="flex flex-wrap mb-6">
+                <div className="w-full px-3">
+                  <label className="block uppercase tracking-wide text-gray-400 text-xs font-bold mb-2">
+                    Customer Last Name
+                  </label>
+                  <input
+                    type="text"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    placeholder="Enter customer last name"
                     className="appearance-none block w-full bg-gray-200 text-gray-700 border border-gray-200 rounded py-3 px-4 leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
                     required
                   />
@@ -79,13 +98,13 @@ export default function Rental() {
               <div className="flex flex-wrap mb-6">
                 <div className="w-full px-3">
                   <label className="block uppercase tracking-wide text-gray-400 text-xs font-bold mb-2">
-                    Video Title
+                    Video Title 
                   </label>
                   <input
                     type="text"
                     value={videoTitles}
                     onChange={(e) => setVideoTitles(e.target.value)}
-                    placeholder="Enter video title"
+                    placeholder="e.g. Inception, Titanic"
                     className="appearance-none block w-full bg-gray-200 text-gray-700 border border-gray-200 rounded py-3 px-4 leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
                     required
                   />

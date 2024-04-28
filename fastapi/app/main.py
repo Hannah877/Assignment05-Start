@@ -29,13 +29,14 @@ async def root():
 @app.post("/rental")
 async def rental(request: Request):
     data = await request.json()
-    customer_name = data['customer']
+    customer_first_name = data['firstName']
+    customer_last_name = data['lastName']
     videos = data['videos']
 
     rental_date = datetime.now()
     due_date = rental_date + timedelta(days=data['rental_period'])
 
-    confirmation_message = f"New customer {customer_name} has successfully rented {len(videos)} video(s).\n"
+    confirmation_message = f"New customer {customer_first_name} {customer_last_name} has successfully rented\n {videos}.\n"
     confirmation_message += f"Due date: {due_date.strftime('%Y-%m-%d')} \nStaff ID: {data['staff_id']}"
 
     return JSONResponse(content={"message": confirmation_message})
