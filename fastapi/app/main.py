@@ -77,7 +77,7 @@ async def rental(request: Request):
 
             if result:
                 film_inventory = result[1]
-                print(film_inventory)
+
                 if film_inventory > 0:
                     films_available.append(name)
                 else:
@@ -85,38 +85,39 @@ async def rental(request: Request):
             else:
                 films_not_available.append(name)
 
-            query_film_id = text("""
-                                SELECT film_id
-                                FROM film
-                                WHERE title = :film_name
-            """)
-            result_film_id = session.execute(
-                query_film_id, {"film_name": name})
-            film_id_row = result_film_id.fetchone()
-            print(film_id_row)
-            if film_id_row:
-                film_id = film_id_row[0]
-
-                # Insert rental record for the film
-                query_insert_rental = text("""
-                                            INSERT INTO rental (rental_date, inventory_id, customer_id, staff_id, return_date)
-                                            SELECT
-                                                NOW(),
-                                                i.inventory_id,
-                                                :customer_id,
-                                                1,
-                                                :due_date
-                                            FROM
-                                                inventory i
-                                            LEFT JOIN
-                                                rental r ON i.inventory_id = r.inventory_id AND r.return_date IS NULL
-                                            WHERE
-                                                i.film_id = :film_id
-                                                AND r.inventory_id IS NULL
-                                            LIMIT 1
+            if film_inventory > 0:
+                query_film_id = text("""
+                                    SELECT film_id
+                                    FROM film
+                                    WHERE title = :film_name
                 """)
-                session.execute(query_insert_rental, {
-                                "film_id": film_id, "customer_id": customer_id, "due_date": due_date})
+                result_film_id = session.execute(
+                    query_film_id, {"film_name": name})
+                film_id_row = result_film_id.fetchone()
+
+                if film_id_row:
+                    film_id = film_id_row[0]
+
+                    # Insert rental record for the film
+                    query_insert_rental = text("""
+                                                INSERT INTO rental (rental_date, inventory_id, customer_id, staff_id, return_date)
+                                                SELECT
+                                                    NOW(),
+                                                    i.inventory_id,
+                                                    :customer_id,
+                                                    1,
+                                                    :due_date
+                                                FROM
+                                                    inventory i
+                                                LEFT JOIN
+                                                    rental r ON i.inventory_id = r.inventory_id AND r.return_date IS NULL
+                                                WHERE
+                                                    i.film_id = :film_id
+                                                    AND r.inventory_id IS NULL
+                                                LIMIT 1
+                    """)
+                    session.execute(query_insert_rental, {
+                                    "film_id": film_id, "customer_id": customer_id, "due_date": due_date})
 
         session.commit()
         confirmation_message = f"New customer {customer_first_name} {customer_last_name} has been successfully added to the database.\n\n"
