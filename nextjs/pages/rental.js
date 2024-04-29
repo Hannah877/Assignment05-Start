@@ -104,7 +104,7 @@ export default function Rental() {
                     type="text"
                     value={videoTitles}
                     onChange={(e) => setVideoTitles(e.target.value)}
-                    placeholder="e.g. Inception, Titanic"
+                    placeholder="e.g. academy dinosaur, ace goldfinger"
                     className="appearance-none block w-full bg-gray-200 text-gray-700 border border-gray-200 rounded py-3 px-4 leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
                     required
                   />
